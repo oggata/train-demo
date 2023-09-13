@@ -174,13 +174,13 @@
        });
 
        
-       BABYLON.SceneLoader.ImportMeshAsync("", "/gltf/", "yokohama.glb").then((result) => {
+       BABYLON.SceneLoader.ImportMeshAsync("", "./gltf/", "yokohama.glb").then((result) => {
          result.meshes[0].position.x = 70;
          result.meshes[0].position.y = -2;
          result.meshes[0].position.z = 70;
        });
       
-       BABYLON.SceneLoader.ImportMeshAsync("", "/gltf/", "senro.glb?11").then((result) => {
+       BABYLON.SceneLoader.ImportMeshAsync("", "./gltf/", "senro.glb?11").then((result) => {
          result.meshes[0].position.x = -10;
          result.meshes[0].position.y = 2;
          result.meshes[0].position.z = -10;
@@ -189,7 +189,7 @@
        var trains = [];
        for (var i = 1; i < 10; i++) {
          //BABYLON.SceneLoader.ImportMeshAsync("", "/gltf/", "t" + i + ".glb").then((result) => {
-         BABYLON.SceneLoader.ImportMeshAsync("", "/gltf/", "train2.glb").then((result) => {
+         BABYLON.SceneLoader.ImportMeshAsync("", "./gltf/", "train2.glb").then((result) => {
            result.meshes[0].startPosition = getRand(-400, 400);
            result.meshes[0].position.x = result.meshes[0].startPosition;
            result.meshes[0].position.y = 2;
