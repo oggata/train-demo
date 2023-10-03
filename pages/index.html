@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>train-demo</title>
+    <!-- Babylon.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+    <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+    <script src="https://preview.babylonjs.com/ammo.js"></script>
+    <script src="https://preview.babylonjs.com/cannon.js"></script>
+    <script src="https://preview.babylonjs.com/Oimo.js"></script>
+    <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+    <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+
+      function getParam(name, url) {
+          if (!url) url = window.location.href;
+          name = name.replace(/[\[\]]/g, "\\$&");
+          var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+              results = regex.exec(url);
+          if (!results) return null;
+          if (!results[2]) return '';
+          return decodeURIComponent(results[2].replace(/\+/g, " "));
+      }
+      var trainid = getParam('trainid');
+      var canvas = document.getElementById("renderCanvas");
+      var startRenderLoop = function (engine, canvas) {
+       engine.runRenderLoop(function () {
+         if (sceneToRender && sceneToRender.activeCamera) {
+           sceneToRender.render();
+         }
+       });
+     };
+     //Config
+     var ObjectDestroyTime = 100 * 10;
+     var CameraType = 1; //1:PC 2:VR
+     var MaxBoxCreateTime = 10;
+     var MaxBoxCount = 300;
+     var WallRange = 1000;
+     var CollisionHitDistance = 9;
+     //Var
+     var GameTime = 0;
+     var BoxCreateTime = 0;
+     var IsGameOver = false;
+     var IsGameReset = false;
+     var engine = null;
+     var scene = null;
+     var sceneToRender = null;
+     var createDefaultEngine = function () {
+       return new BABYLON.Engine(canvas, true, {
+         preserveDrawingBuffer: true,
+         stencil: true,
+         disableWebGL2Support: false,
+       });
+     };
+     var createScene = async function () {
+       //シーン
+       var scene = new BABYLON.Scene(engine);
+       scene.enablePhysics();
+       scene.checkCollisions = true;
+       scene.collisionsEnabled = true;
+       scene.collisionEnabled = true;
+       //下の画面
+       // 名前, alpha(カメラの縦角度), beta(カメラの横角度), radius(距離), 座標, 対象のシーンを指定します。
+       var camera1 = new BABYLON.ArcRotateCamera("Camera", 0, 0, 5, new BABYLON.Vector3(50, 30, 50), scene);
+       // カメラ自体の角度、位置を指定します。※下の説明を参照
+       camera1.setPosition(new BABYLON.Vector3(-40, 6, -40));
+       // これはUniversal Cameraと同じです。
+       //camera1.attachControl(canvas, true);
+       // 名前, alpha(カメラの縦角度), beta(カメラの横角度), radius(距離), 座標, 対象のシーンを指定します。
+       var camera2 = new BABYLON.ArcRotateCamera("Camera", 0, 0, 5, new BABYLON.Vector3(50, 30, 50), scene);
+       // カメラ自体の角度、位置を指定します。※下の説明を参照
+       camera2.setPosition(new BABYLON.Vector3(-50, 10, -50));
+       // これはUniversal Cameraと同じです。
+       camera2.attachControl(canvas, true);
+       // This creates and initially positions a follow camera   
+       var camera4 = new BABYLON.FollowCamera("FollowCam", new BABYLON.Vector3(0, 10, -10), scene);
+       //The goal distance of camera from target
+       camera4.radius = 10;
+       // The goal height of camera above local origin (centre) of target
+       camera4.heightOffset = 50;
+       // The goal rotation of camera around local origin (centre) of target in x y plane
+       camera4.rotationOffset = 0;
+       //Acceleration of camera in moving from current to goal position
+       camera4.cameraAcceleration = 0.005
+       //The speed at which acceleration is halted 
+       camera4.maxCameraSpeed = 10
+       //camera.target is set after the target's creation
+       // This attaches the camera to the canvas
+       //camera.attachControl(canvas, true);
+       //ライト
+       var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+       light.intensity = 0.8;
+       camera1.viewport = new BABYLON.Viewport(0.0, 0.0, 1.0, 0.5);
+       camera2.viewport = new BABYLON.Viewport(0.0, 0.5, 0.5, 0.5);
+       camera4.viewport = new BABYLON.Viewport(0.5, 0.5, 0.5, 1.0);
+       scene.activeCameras.push(camera1);
+       scene.activeCameras.push(camera2);
+       scene.activeCameras.push(camera4);
+       var mesha = null;
+       var trains = [];
+
+       function getRand(from, to) {
+         return from + Math.floor(Math.random() * (to - from + 1));
+       }
+       //地面
+       var ground = BABYLON.Mesh.CreateGround("ground1", 2000, 2000, 2, scene);
+       ground.diffuseColor = new BABYLON.Color3(0, 0, 1);
+       var material = new BABYLON.StandardMaterial("bookcase", scene);
+       material.diffuseColor = new BABYLON.Color3(.2, .1, .5);
+       ground.material = material
+       //ground.color = "black";
+       var groundMaterial = new BABYLON.StandardMaterial("ground", scene);
+       /*
+       groundMaterial.diffuseTexture = new BABYLON.Texture(
+         "https://cdn.glitch.global/4c7a3546-2889-4712-ab19-6d8ae832c93f/grand.png?v=1657102468367",
+         scene
+       );
+       groundMaterial.diffuseTexture.uScale = 600;
+       groundMaterial.diffuseTexture.vScale = 600;
+       groundMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+       ground.material = groundMaterial;
+       */
+       ground.receiveShadows = true;
+       ground.checkCollisions = true;
+       ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.BoxImpostor, {
+         mass: 0,
+         restitution: 1,
+       }, scene);
+       //空を作る
+       var skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {
+         size: 1000.0,
+       }, scene);
+       var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+       skyboxMaterial.backFaceCulling = false;
+       skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("https://cdn.glitch.global/4c7a3546-2889-4712-ab19-6d8ae832c93f/sky.png?v=1657103500375", scene);
+       skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+       skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+       skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+       skybox.material = skyboxMaterial;
+       var xrHelper = await scene.createDefaultXRExperienceAsync();
+       var xr = await scene.createDefaultXRExperienceAsync({
+         xrInput: xrHelper.input,
+         floorMeshes: [ground],
+         disableTeleportation: false,
+       });
+       xr.baseExperience.sessionManager.onXRFrameObservable.add(() => {
+         console.log("state1:" + xr.baseExperience.state);
+         if (xr.baseExperience.state === BABYLON.WebXRState.IN_XR) {
+           CameraType = 2;
+         }
+       });
+       xr.baseExperience.onStateChangedObservable.add((state) => {
+         console.log("state2:" + state);
+         //XRの中の世界にいる場合に初期化する
+         if (state === BABYLON.WebXRState.IN_XR) {
+           CameraType = 2;
+         }
+       });
+
+       /*
+       BABYLON.SceneLoader.ImportMeshAsync("", "./gltf/", "yokohama.glb").then((result) => {
+         result.meshes[0].position.x = 70;
+         result.meshes[0].position.y = -2;
+         result.meshes[0].position.z = 70;
+       });
+       */
+      
+       BABYLON.SceneLoader.ImportMeshAsync("", "../gltf/", "senro.glb?11").then((result) => {
+         result.meshes[0].position.x = -10;
+         result.meshes[0].position.y = 2;
+         result.meshes[0].position.z = -10;
+         result.meshes[0].scaling = new BABYLON.Vector3(3, 3, 3)
+       });
+       var trains = [];
+       for (var i = 1; i < 10; i++) {
+         BABYLON.SceneLoader.ImportMeshAsync("", "https://keikyu-3d-viewer.vercel.app/models/", trainid + ".glb").then((result) => {
+           result.meshes[0].startPosition = getRand(-400, 400);
+           result.meshes[0].position.x = result.meshes[0].startPosition;
+           result.meshes[0].position.y = -24;
+           result.meshes[0].position.z = -10;
+           result.meshes[0].scaling = new BABYLON.Vector3(200, 200, 200)
+           var mesh = result.meshes[0];
+           trains.push(mesh);
+         });
+       }
+
+       function getRand(from, to) {
+         return from + Math.floor(Math.random() * (to - from + 1));
+       }
+       setInterval(function () {
+         for (var t = 0; t < trains.length; t++) {
+           trains[t].position.x = trains[t].position.x - 1;
+           if (trains[t].position.x < -300) {
+             trains[t].position.x = 500;
+           }
+         }
+         if (trains[0]) {
+           console.log("aa");
+           camera4.lockedTarget = trains[0];
+         }
+       }, 20);
+       return scene;
+     };
+     window.initFunction = async function () {
+       var asyncEngineCreation = async function () {
+         try {
+           return createDefaultEngine();
+         } catch (e) {
+           console.log("the available createEngine function failed. Creating the default engine instead");
+           return createDefaultEngine();
+         }
+       };
+       window.engine = await asyncEngineCreation();
+       if (!engine) throw "engine should not be null.";
+       startRenderLoop(engine, canvas);
+       window.scene = createScene();
+     };
+     initFunction().then(() => {
+       scene.then((returnedScene) => {
+         sceneToRender = returnedScene;
+       });
+     });
+     // Resize
+     window.addEventListener("resize", function () {
+       engine.resize();
+     });
+    </script>
+  </body>
+</html>
