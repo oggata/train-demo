@@ -165,34 +165,12 @@
        skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
        skybox.material = skyboxMaterial;
 
-       /*
-       var xrHelper = await scene.createDefaultXRExperienceAsync();
-       var xr = await scene.createDefaultXRExperienceAsync({
-         xrInput: xrHelper.input,
-         floorMeshes: [ground],
-         disableTeleportation: false,
-       });
-       xr.baseExperience.sessionManager.onXRFrameObservable.add(() => {
-         console.log("state1:" + xr.baseExperience.state);
-         if (xr.baseExperience.state === BABYLON.WebXRState.IN_XR) {
-           CameraType = 2;
-         }
-       });
-       xr.baseExperience.onStateChangedObservable.add((state) => {
-         console.log("state2:" + state);
-         //XRの中の世界にいる場合に初期化する
-         if (state === BABYLON.WebXRState.IN_XR) {
-           CameraType = 2;
-         }
-       });
-        */
-       /*
-       BABYLON.SceneLoader.ImportMeshAsync("", "./gltf/", "yokohama.glb").then((result) => {
+       BABYLON.SceneLoader.ImportMeshAsync("", "../gltf/", "yokohama2.glb?bb").then((result) => {
          result.meshes[0].position.x = 70;
          result.meshes[0].position.y = -2;
-         result.meshes[0].position.z = 70;
+         result.meshes[0].position.z = 140;
+         result.meshes[0].scaling = new BABYLON.Vector3(10, 10, 10)
        });
-       */
       
        BABYLON.SceneLoader.ImportMeshAsync("", "../gltf/", "senro.glb?11").then((result) => {
          result.meshes[0].position.x = -10;
