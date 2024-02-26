@@ -77,9 +77,10 @@
        scene.collisionEnabled = true;
        //下の画面
        // 名前, alpha(カメラの縦角度), beta(カメラの横角度), radius(距離), 座標, 対象のシーンを指定します。
-       var camera1 = new BABYLON.ArcRotateCamera("Camera", 0, 0, 5, new BABYLON.Vector3(50, 30, 50), scene);
-       // カメラ自体の角度、位置を指定します。※下の説明を参照
-       camera1.setPosition(new BABYLON.Vector3(-40, 6, -40));
+       var camera1 = new BABYLON.ArcRotateCamera("Camera", 0, 0, 5, new BABYLON.Vector3(50, 50, 50), scene);
+       camera1.setPosition(new BABYLON.Vector3(1, 80, 130));
+
+
        // これはUniversal Cameraと同じです。
        //camera1.attachControl(canvas, true);
        // 名前, alpha(カメラの縦角度), beta(カメラの横角度), radius(距離), 座標, 対象のシーンを指定します。
@@ -88,18 +89,20 @@
        camera2.setPosition(new BABYLON.Vector3(-50, 10, -50));
        // これはUniversal Cameraと同じです。
        camera2.attachControl(canvas, true);
+
+
+
        // This creates and initially positions a follow camera   
-       var camera4 = new BABYLON.FollowCamera("FollowCam", new BABYLON.Vector3(0, 10, -10), scene);
+       var camera4 = new BABYLON.FollowCamera("FollowCam", new BABYLON.Vector3(-100, 410, -110), scene);
        //The goal distance of camera from target
-       camera4.radius = 10;
-       // The goal height of camera above local origin (centre) of target
+       camera4.radius = 90;
        camera4.heightOffset = 50;
        // The goal rotation of camera around local origin (centre) of target in x y plane
-       camera4.rotationOffset = 0;
+       camera4.rotationOffset = -150;
        //Acceleration of camera in moving from current to goal position
-       camera4.cameraAcceleration = 0.005
+       camera4.cameraAcceleration = 0.001
        //The speed at which acceleration is halted 
-       camera4.maxCameraSpeed = 10
+    //camera4.maxCameraSpeed = 30
        //camera.target is set after the target's creation
        // This attaches the camera to the canvas
        //camera.attachControl(canvas, true);
@@ -119,10 +122,11 @@
          return from + Math.floor(Math.random() * (to - from + 1));
        }
        //地面
-       var ground = BABYLON.Mesh.CreateGround("ground1", 2000, 2000, 2, scene);
+       var ground = BABYLON.Mesh.CreateGround("ground1", 5000, 500, 2, scene);
        ground.diffuseColor = new BABYLON.Color3(0, 0, 1);
        var material = new BABYLON.StandardMaterial("bookcase", scene);
-       material.diffuseColor = new BABYLON.Color3(.2, .1, .5);
+       //material.diffuseColor = new BABYLON.Color3(.2, .1, .5);
+       material.diffuseColor =  new BABYLON.Color3.FromInts(152, 164, 132);
        ground.material = material
        //ground.color = "black";
        var groundMaterial = new BABYLON.StandardMaterial("ground", scene);
@@ -142,17 +146,28 @@
          mass: 0,
          restitution: 1,
        }, scene);
-       //空を作る
-       var skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {
-         size: 1000.0,
-       }, scene);
-       var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
-       skyboxMaterial.backFaceCulling = false;
-       skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("https://cdn.glitch.global/4c7a3546-2889-4712-ab19-6d8ae832c93f/sky.png?v=1657103500375", scene);
-       skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
-       skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
-       skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
-       skybox.material = skyboxMaterial;
+       
+
+        var skybox = BABYLON.MeshBuilder.CreateBox(
+          "skyBox",
+          {
+            size: 3000.0,
+          },
+          scene
+        );
+        var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+        skyboxMaterial.backFaceCulling = false;
+        skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture(
+          "./images/sky.png?aaa",
+          scene
+        );
+        skyboxMaterial.reflectionTexture.coordinatesMode =
+          BABYLON.Texture.SKYBOX_MODE;
+        skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+        skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+        skybox.material = skyboxMaterial;
+
+
        var xrHelper = await scene.createDefaultXRExperienceAsync();
        var xr = await scene.createDefaultXRExperienceAsync({
          xrInput: xrHelper.input,
@@ -174,23 +189,26 @@
        });
 
        
-       BABYLON.SceneLoader.ImportMeshAsync("", "./gltf/", "yokohama.glb").then((result) => {
+       BABYLON.SceneLoader.ImportMeshAsync("", "./gltf/", "a.glb?bba").then((result) => {
          result.meshes[0].position.x = 70;
-         result.meshes[0].position.y = -2;
-         result.meshes[0].position.z = 70;
+         result.meshes[0].position.y = 0;
+         result.meshes[0].position.z = 5;
+         result.meshes[0].scaling = new BABYLON.Vector3(5, 5, 5)
        });
       
+      /*
        BABYLON.SceneLoader.ImportMeshAsync("", "./gltf/", "senro.glb?11").then((result) => {
          result.meshes[0].position.x = -10;
          result.meshes[0].position.y = 2;
          result.meshes[0].position.z = -10;
          result.meshes[0].scaling = new BABYLON.Vector3(3, 3, 3)
        });
+       */
        var trains = [];
-       for (var i = 1; i < 10; i++) {
+       for (var i = 1; i < 3; i++) {
          //BABYLON.SceneLoader.ImportMeshAsync("", "/gltf/", "t" + i + ".glb").then((result) => {
          BABYLON.SceneLoader.ImportMeshAsync("", "./gltf/", "train2.glb").then((result) => {
-           result.meshes[0].startPosition = getRand(-400, 400);
+           result.meshes[0].startPosition = getRand(-1500, 1500);
            result.meshes[0].position.x = result.meshes[0].startPosition;
            result.meshes[0].position.y = 2;
            result.meshes[0].position.z = -10;
@@ -206,8 +224,8 @@
        setInterval(function () {
          for (var t = 0; t < trains.length; t++) {
            trains[t].position.x = trains[t].position.x - 1;
-           if (trains[t].position.x < -300) {
-             trains[t].position.x = 500;
+           if (trains[t].position.x < -1500) {
+             trains[t].position.x = 1500;
            }
          }
          if (trains[0]) {
