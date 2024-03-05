@@ -92,6 +92,11 @@
 
 
 
+       var camera5 = new BABYLON.ArcRotateCamera("Camera", -100, 30, 0, new BABYLON.Vector3(-100, 30, 0), scene);
+       camera5.attachControl(canvas, true);
+
+
+
        // This creates and initially positions a follow camera   
        var camera4 = new BABYLON.FollowCamera("FollowCam", new BABYLON.Vector3(-100, 410, -110), scene);
        //The goal distance of camera from target
@@ -106,15 +111,22 @@
        //camera.target is set after the target's creation
        // This attaches the camera to the canvas
        //camera.attachControl(canvas, true);
+
+
        //ライト
        var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
        light.intensity = 0.8;
        camera1.viewport = new BABYLON.Viewport(0.0, 0.0, 1.0, 0.5);
-       camera2.viewport = new BABYLON.Viewport(0.0, 0.5, 0.5, 0.5);
-       camera4.viewport = new BABYLON.Viewport(0.5, 0.5, 0.5, 1.0);
+       //camera2.viewport = new BABYLON.Viewport(0.0, 0.5, 0.5, 0.5);
+       camera4.viewport = new BABYLON.Viewport(0.0, 0.5, 0.5, 0.5);
+       camera5.viewport = new BABYLON.Viewport(0.5, 0.5, 0.5, 1.0);
+
+
+
        scene.activeCameras.push(camera1);
-       scene.activeCameras.push(camera2);
+       //scene.activeCameras.push(camera2);
        scene.activeCameras.push(camera4);
+       scene.activeCameras.push(camera5);
        var mesha = null;
        var trains = [];
 
@@ -221,9 +233,6 @@ var BoxArray = [];
            result.meshes[0].position.z = 0;
            result.meshes[0].scaling = new BABYLON.Vector3(3, 3, 3);
            var mesh = result.meshes[0];
-           
-
-
 
               const box_collision = BABYLON.MeshBuilder.CreateBox(
                 "box",
@@ -268,9 +277,20 @@ var BoxArray = [];
              trains[t].position.x = 1500;
            }
          }
+
+
+         if(trains[0]){
+           camera5.setPosition(new BABYLON.Vector3(trains[0].position.x, camera5.position.y, trains[0].position.z));
+         }
+
          if (BoxArray[0]) {
            console.log("aa");
            camera4.lockedTarget = BoxArray[0];
+//console.log(BoxArray[0].position.x);
+           //camera5.position.x = BoxArray[0].position.x;
+
+          
+
          }
        }, 20);
        return scene;
